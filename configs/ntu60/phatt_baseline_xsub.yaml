@@ -10,7 +10,7 @@ data:
   val_label: data/ntu/processed/ntu60_xsub/val_label.pkl
   num_frames: 64
   batch_size: 32
-  num_workers: 4
+  num_workers: 8
   random_shift: true
   random_mirror: true
   bone: false
@@ -47,7 +47,7 @@ training:
 
 # Device
 device:
-  gpu: [0]
+  gpu: [0, 1, 2, 3]
 
 # Logging
 logging:
