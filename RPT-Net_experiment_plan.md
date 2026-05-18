@@ -193,7 +193,8 @@ Classifier
 NTU RGB+D 60
 NTU RGB+D 120
 ```
-
+数据集路径：/data/lxc/datasets/ntu/nturgbd_skeletons_s001_to_s017
+        /data/lxc/datasets/ntu/nturgbd_skeletons_s018_to_s032
 ### 4.2 数据格式
 
 建议将原始 skeleton 数据预处理为统一格式：
