@@ -1,0 +1,50 @@
+# Quick debug config - 2 epochs, small batch
+work_dir: outputs/debug_xsub
+
+data:
+  train_data: data/ntu/processed/ntu60_xsub/train_data.npy
+  train_label: data/ntu/processed/ntu60_xsub/train_label.pkl
+  val_data: data/ntu/processed/ntu60_xsub/val_data.npy
+  val_label: data/ntu/processed/ntu60_xsub/val_label.pkl
+  num_frames: 64
+  batch_size: 16
+  num_workers: 2
+  random_shift: true
+  random_mirror: false
+  bone: false
+  noise_drop_ratio: 0.0
+
+model:
+  name: PHAttBaseline
+  num_classes: 60
+  num_frames: 64
+  num_parts: 5
+  heatmap_size: 32
+  sigma: 1.5
+  token_dim: 128
+  depth: 2
+  num_heads: 4
+  mlp_ratio: 4.0
+  dropout: 0.1
+  attn_drop: 0.1
+  classifier_drop: 0.5
+
+training:
+  epochs: 2
+  optimizer: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  lr_scheduler: cosine
+  warmup_epochs: 0
+  min_lr: 0.00001
+  label_smoothing: 0.0
+
+device:
+  gpu: [0]
+
+logging:
+  print_freq: 50
+  save_freq: 1
+  use_tensorboard: false
+
+seed: 42
