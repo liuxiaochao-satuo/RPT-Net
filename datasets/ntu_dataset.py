@@ -76,38 +76,42 @@ class NTUDataset(Dataset):
         return len(self.labels)
 
     def _temporal_sample(self, data_numpy):
-        """Sample num_frames from T dimension.
+        """Uniform temporal sampling to num_frames.
+
+        1. Strip trailing zero-frames (keep only valid portion)
+        2. Uniformly sample to exactly num_frames
+        3. During training, optionally add small random temporal perturbation
 
         data_numpy: [C, T, V, M]
         """
         C, T, V, M = data_numpy.shape
 
-        # find actual length (non-zero frames)
+        # strip zero-frames: keep only the valid portion
         valid_mask = np.abs(data_numpy).sum(axis=(0, 2, 3)) > 0  # [T]
         valid_indices = np.where(valid_mask)[0]
         if len(valid_indices) == 0:
             return np.zeros((C, self.num_frames, V, M), dtype=np.float32)
-        actual_len = valid_indices[-1] + 1
 
+        data_numpy = data_numpy[:, valid_indices]
+        actual_len = data_numpy.shape[1]
+
+        # uniform sampling: works for both longer and shorter sequences
         if actual_len == self.num_frames:
-            return data_numpy[:, :self.num_frames]
-        elif actual_len > self.num_frames:
-            if self.random_shift:
-                start = np.random.randint(0, actual_len - self.num_frames + 1)
-            else:
-                start = 0
-            return data_numpy[:, start:start + self.num_frames]
-        else:
-            # pad by repeating
-            if self.random_shift:
-                start = np.random.randint(0, self.num_frames - actual_len + 1)
-                output = np.zeros((C, self.num_frames, V, M), dtype=np.float32)
-                output[:, start:start + actual_len] = data_numpy[:, :actual_len]
-                return output
-            else:
-                # uniform temporal sampling
-                indices = np.linspace(0, actual_len - 1, self.num_frames).astype(int)
-                return data_numpy[:, indices]
+            return data_numpy
+
+        interval = actual_len / self.num_frames
+        uniform_indices = [int(i * interval) for i in range(self.num_frames)]
+
+        if self.random_shift and actual_len > self.num_frames:
+            # small random jitter: each index can shift by +-1 within valid range
+            max_jitter = max(1, int(interval * 0.5))
+            jittered = []
+            for idx in uniform_indices:
+                offset = np.random.randint(-max_jitter, max_jitter + 1)
+                jittered.append(np.clip(idx + offset, 0, actual_len - 1))
+            return data_numpy[:, jittered]
+
+        return data_numpy[:, uniform_indices]
 
     def _mirror(self, data_numpy):
         """Randomly mirror left-right joints with x-axis flip."""
