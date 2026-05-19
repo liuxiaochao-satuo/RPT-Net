@@ -52,7 +52,8 @@ class PartHeatmapGenerator(nn.Module):
             skeleton: [B, C, T, V, M] where C >= 2 (x, y, ...)
 
         Returns:
-            part_heatmaps: [B, T, P, H, W]
+            part_heatmaps: [B, T, P, H, W]  (normalized to [0,1])
+            raw_peaks: [B, T, P]  (pre-normalization peak values for confidence)
         """
         B, C, T, V, M = skeleton.shape
         H = W = self.heatmap_size
@@ -108,12 +109,16 @@ class PartHeatmapGenerator(nn.Module):
         # part-level fusion: sum joints within each part, then normalize
         part_heatmaps = torch.zeros(B, T, self.num_parts, H, W,
                                     device=skeleton.device, dtype=skeleton.dtype)
+        raw_peaks = torch.zeros(B, T, self.num_parts,
+                                device=skeleton.device, dtype=skeleton.dtype)
 
         for p_idx, joint_indices in enumerate(self.part_indices):
             part_map = joint_heatmaps[:, :, joint_indices].sum(dim=2)  # [B, T, H, W]
+            # save raw peak before normalization (used as confidence signal)
+            p_max = part_map.reshape(B, T, -1).max(dim=-1).values  # [B, T]
+            raw_peaks[:, :, p_idx] = p_max
             # normalize to [0, 1] per part per frame
-            p_max = part_map.reshape(B, T, -1).max(dim=-1).values.reshape(B, T, 1, 1)
-            part_map = part_map / (p_max + eps)
+            part_map = part_map / (p_max.reshape(B, T, 1, 1) + eps)
             part_heatmaps[:, :, p_idx] = part_map
 
-        return part_heatmaps
+        return part_heatmaps, raw_peaks

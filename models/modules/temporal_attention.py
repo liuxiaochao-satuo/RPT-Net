@@ -50,8 +50,9 @@ class TemporalAttention(nn.Module):
         attn = (q @ k.transpose(-2, -1)) * self.scale  # [B*P, H, T, T]
 
         if reliability is not None:
-            # reliability bias: [B, T, P] → [B*P, 1, 1, T] broadcast to key dim
-            r_bias = reliability.permute(0, 2, 1).reshape(B * P, 1, 1, T)
+            # log-space reliability bias: maps (0,1) → (-inf, 0]
+            r_bias = torch.log(reliability.clamp(min=1e-6))
+            r_bias = r_bias.permute(0, 2, 1).reshape(B * P, 1, 1, T)
             attn = attn + r_bias
 
         attn_weights = attn.softmax(dim=-1)

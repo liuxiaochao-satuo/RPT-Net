@@ -49,8 +49,10 @@ class SpatialAttention(nn.Module):
         attn = (q @ k.transpose(-2, -1)) * self.scale  # [B*T, H, P, P]
 
         if reliability is not None:
-            # reliability bias: [B, T, P] → [B*T, 1, 1, P] broadcast to key dim
-            r_bias = reliability.reshape(B * T, 1, 1, P)
+            # log-space reliability bias: maps (0,1) → (-inf, 0]
+            # low reliability → large negative bias → suppressed attention
+            r_bias = torch.log(reliability.clamp(min=1e-6))
+            r_bias = r_bias.reshape(B * T, 1, 1, P)  # broadcast to key dim
             attn = attn + r_bias
 
         attn_weights = attn.softmax(dim=-1)

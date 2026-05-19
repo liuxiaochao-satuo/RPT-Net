@@ -1,0 +1,53 @@
+# Ablation 05: RPT-Net with Confidence + Dispersion
+work_dir: outputs/ablation/05_uncertainty_cd_xsub
+
+data:
+  train_data: data/ntu/processed/ntu60_xsub/train_data.npy
+  train_label: data/ntu/processed/ntu60_xsub/train_label.pkl
+  val_data: data/ntu/processed/ntu60_xsub/val_data.npy
+  val_label: data/ntu/processed/ntu60_xsub/val_label.pkl
+  num_frames: 64
+  batch_size: 32
+  num_workers: 8
+  random_shift: true
+  random_mirror: true
+
+model:
+  name: RPTNet_CD
+  num_classes: 60
+  num_frames: 64
+  num_parts: 5
+  heatmap_size: 32
+  sigma: 1.5
+  token_dim: 128
+  depth: 4
+  num_heads: 4
+  mlp_ratio: 4.0
+  dropout: 0.1
+  attn_drop: 0.1
+  classifier_drop: 0.5
+  use_uncertainty_encoding: true
+  use_reliability_attention: true
+  use_confidence: true
+  use_dispersion: true
+  use_temporal_instability: false
+
+training:
+  epochs: 100
+  optimizer: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  lr_scheduler: cosine
+  warmup_epochs: 5
+  min_lr: 0.00001
+  label_smoothing: 0.1
+
+device:
+  gpu: [0, 1, 2, 3]
+
+logging:
+  print_freq: 20
+  save_freq: 10
+  use_tensorboard: true
+
+seed: 42
