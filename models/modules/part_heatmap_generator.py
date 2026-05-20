@@ -43,8 +43,8 @@ class PartHeatmapGenerator(nn.Module):
         # pre-compute coordinate grids (registered as buffer for device transfer)
         coords = torch.arange(heatmap_size, dtype=torch.float32)
         grid_y, grid_x = torch.meshgrid(coords, coords, indexing='ij')
-        self.register_buffer('grid_x', grid_x)  # [H, W]
-        self.register_buffer('grid_y', grid_y)  # [H, W]
+        self.register_buffer('grid_x', grid_x.clone())
+        self.register_buffer('grid_y', grid_y.clone())
 
     def forward(self, skeleton):
         """

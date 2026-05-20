@@ -113,11 +113,13 @@ class PHAttBaseline(nn.Module):
             nn.Linear(token_dim, num_classes),
         )
 
-    def forward(self, x, return_attention=False):
+    def forward(self, x, return_attention=False, apply_reliability_bias=True):
         """
         Args:
             x: [B, C, T, V, M]
             return_attention: if True, return auxiliary dict
+            apply_reliability_bias: if False, attention blocks run without
+                reliability bias (for Standard vs RA visualization)
 
         Returns:
             logits: [B, num_classes]
@@ -157,15 +159,19 @@ class PHAttBaseline(nn.Module):
         part_tokens = part_tokens + self.part_embedding + self.time_embedding[:, :T]
 
         # Step 5: Spatial-Temporal Attention
+        attn_reliability = reliability
+        if not apply_reliability_bias:
+            attn_reliability = None
+
         tokens = part_tokens
         all_attn = []
         for block in self.blocks:
             if return_attention:
                 tokens, attn_dict = block(
-                    tokens, reliability=reliability, return_attn=True)
+                    tokens, reliability=attn_reliability, return_attn=True)
                 all_attn.append(attn_dict)
             else:
-                tokens = block(tokens, reliability=reliability)
+                tokens = block(tokens, reliability=attn_reliability)
 
         tokens = self.norm(tokens)
 
